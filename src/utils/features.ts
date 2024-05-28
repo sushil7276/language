@@ -1,6 +1,8 @@
-import { generate } from "random-words";
+import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import _ from "lodash";
+import { generate } from "random-words";
+import { rootAction } from "../Redux/slices";
 
 const generateMCQ = (meaning: { Text: string }[], index: number): string[] => {
   const correctAns: string = meaning[index].Text;
@@ -20,47 +22,51 @@ const generateMCQ = (meaning: { Text: string }[], index: number): string[] => {
   return shuffleElement;
 };
 
-export const translateWords = async (params: LangType): Promise<WordType[]> => {
-  try {
-    const words = generate(8).map((i) => ({ Text: i }));
+export const translateWords = createAsyncThunk(
+  "root/translateWords",
+  async (params: LangType, thunkAPI) => {
+    try {
+      console.log("Start");
+      thunkAPI.dispatch(rootAction.getWordsRequest());
+      const words = generate(8).map((i) => ({ Text: i }));
 
-    const response = await axios.post(
-      "https://microsoft-translator-text.p.rapidapi.com/translate",
-      words,
-      {
-        params: {
-          "to[0]": params,
-          "api-version": "3.0",
-          profanityAction: "NoAction",
-          textType: "plain",
-        },
-        headers: {
-          "x-rapidapi-key":
-            "72edc7c04emsh4aedd4e24d0a5b5p1f8b68jsnaef6e6d8861e",
-          "x-rapidapi-host": "microsoft-translator-text.p.rapidapi.com",
-          "Content-Type": "application/json",
-        },
-      }
-    );
+      const response = await axios.post(
+        "https://microsoft-translator-text.p.rapidapi.com/translate",
+        words,
+        {
+          params: {
+            "to[0]": params,
+            "api-version": "3.0",
+            profanityAction: "NoAction",
+            textType: "plain",
+          },
+          headers: {
+            "x-rapidapi-key":
+              "72edc7c04emsh4aedd4e24d0a5b5p1f8b68jsnaef6e6d8861e",
+            "x-rapidapi-host": "microsoft-translator-text.p.rapidapi.com",
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-    const receive: FetchDataType[] = response.data;
+      const receive: FetchDataType[] = response.data;
 
-    const arr: WordType[] = receive.map((i, index) => {
-      const options: string[] = generateMCQ(words, index);
+      const arr: WordType[] = receive.map((i, index) => {
+        const options: string[] = generateMCQ(words, index);
 
-      return {
-        word: i.translations[0].text,
-        meaning: words[index].Text,
-        options,
-      };
-    });
-
-    return arr;
-  } catch (error) {
-    console.log(error);
-    throw new Error("Some Error");
+        return {
+          word: i.translations[0].text,
+          meaning: words[index].Text,
+          options,
+        };
+      });
+      console.log("Success");
+      thunkAPI.dispatch(rootAction.getWordsSuccess(arr));
+    } catch (error) {
+      thunkAPI.dispatch(rootAction.getWordsFail("Some Error"));
+    }
   }
-};
+);
 
 export const countAnswer = (words: string[], results: string[]): number => {
   if (words.length !== results.length) throw new Error("Array are not equal");

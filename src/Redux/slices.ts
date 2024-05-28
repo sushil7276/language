@@ -42,4 +42,6 @@ export const {
 
 export default rootSlice.reducer;
 
+export const rootAction = rootSlice.actions;
+
 export const rootSelector = (state: { root: StateType }) => state.root;

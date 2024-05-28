@@ -1,16 +1,10 @@
 import { ArrowBack, VolumeUp } from "@mui/icons-material";
 import { Button, Container, Stack, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { fetchAudio, translateWords } from "../utils/features";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  clearState,
-  getWordsFail,
-  getWordsRequest,
-  getWordsSuccess,
-  rootSelector,
-} from "../Redux/slices";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { clearState, rootSelector } from "../Redux/slices";
+import { fetchAudio, translateWords } from "../utils/features";
 import Loader from "./Loader";
 
 function Learning() {
@@ -21,7 +15,7 @@ function Learning() {
   const params = useSearchParams()[0].get("language") as LangType;
   const navigate = useNavigate();
 
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
   const { loading, words, error } = useSelector(rootSelector);
 
   const nextHandler = (): void => {
@@ -44,21 +38,14 @@ function Learning() {
   };
 
   useEffect(() => {
-    dispatch(getWordsRequest());
-    translateWords(params || "hi")
-      .then((arr) => {
-        dispatch(getWordsSuccess(arr));
-      })
-      .catch((err) => {
-        dispatch(getWordsFail(err));
-      });
+    dispatch(translateWords(params || "hi"));
 
     // if error is coming the all state is initial mode
     if (error) {
       alert(error);
       dispatch(clearState());
     }
-  }, []);
+  }, [error, dispatch]);
 
   if (loading) return <Loader />;
   return (
